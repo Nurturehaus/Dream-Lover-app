@@ -12,7 +12,6 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import ProfileSetupScreen from './src/screens/ProfileSetupScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
-import CalendarScreen from './src/screens/CalendarScreen';
 import PartnerLinkScreen from './src/screens/PartnerLinkScreen';
 import LogScreen from './src/screens/LogScreen';
 import InsightsScreen from './src/screens/InsightsScreen';
@@ -56,16 +55,6 @@ function MainTabs() {
             <Text testID="tab-home" style={{ fontSize: 24, color }}>🏠</Text>
           ),
           headerTitle: 'Dream Lover',
-        }}
-      />
-      <Tab.Screen
-        name="Calendar"
-        component={CalendarScreen}
-        options={{
-          tabBarLabel: 'Calendar',
-          tabBarIcon: ({ color, size }) => (
-            <Text testID="tab-calendar" style={{ fontSize: 24, color }}>📅</Text>
-          ),
         }}
       />
       <Tab.Screen

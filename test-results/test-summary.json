@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-07T22:49:55.495Z",
+  "environment": "test",
+  "totalTests": 0,
+  "artifacts": {
+    "screenshots": 6,
+    "videos": 0,
+    "traces": 0
+  },
+  "reports": {
+    "html": true,
+    "json": false,
+    "junit": false
+  }
+}

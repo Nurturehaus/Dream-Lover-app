@@ -279,8 +279,8 @@ const AuthScreen = ({ navigation }) => {
                   <Text style={styles.forgotPassword}>Forgot password?</Text>
                 </TouchableOpacity>
               </View>
+              )}
 
-              {/* Submit Button */}
               <LinearGradient
                 colors={Colors.primary.gradient}
                 style={styles.signInButton}

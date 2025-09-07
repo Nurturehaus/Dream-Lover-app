@@ -1,0 +1,284 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        CI: true
+    
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 30
+
+  visual-regression:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Visual Regression Tests
+      run: npx playwright test visual-regression.spec.js
+      env:
+        CI: true
+    
+    - name: Upload Visual Diff Report
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: visual-diff-report
+        path: test-results/
+        retention-days: 30
+
+  accessibility:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Accessibility Tests
+      run: npx playwright test --grep "accessibility"
+      env:
+        CI: true
+    
+    - name: Upload Accessibility Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: accessibility-report
+        path: playwright-report/
+        retention-days: 30
+
+  performance:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Performance Tests
+      run: npx playwright test --grep "performance"
+      env:
+        CI: true
+    
+    - name: Upload Performance Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-report
+        path: playwright-report/
+        retention-days: 30
+
+  mobile-testing:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Mobile Tests
+      run: npx playwright test --grep "mobile viewport"
+      env:
+        CI: true
+        MOBILE_TESTING: true
+    
+    - name: Upload Mobile Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mobile-test-report
+        path: playwright-report/
+        retention-days: 30
+
+  cross-browser:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright Browser
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    
+    - name: Start development server
+      run: |
+        npm run web:dev &
+        npx wait-on http://localhost:8081 --timeout 60000
+      env:
+        CI: true
+    
+    - name: Run Cross-Browser Tests
+      run: npx playwright test --project=${{ matrix.browser }}
+      env:
+        CI: true
+    
+    - name: Upload Cross-Browser Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ matrix.browser }}-test-report
+        path: playwright-report/
+        retention-days: 30
+
+  test-summary:
+    needs: [test, visual-regression, accessibility, performance, mobile-testing, cross-browser]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+    
+    - name: Generate Test Summary
+      run: |
+        echo "# Test Results Summary" > test-summary.md
+        echo "" >> test-summary.md
+        echo "## Test Jobs Status" >> test-summary.md
+        echo "- Main Tests: ${{ needs.test.result }}" >> test-summary.md
+        echo "- Visual Regression: ${{ needs.visual-regression.result }}" >> test-summary.md
+        echo "- Accessibility: ${{ needs.accessibility.result }}" >> test-summary.md
+        echo "- Performance: ${{ needs.performance.result }}" >> test-summary.md
+        echo "- Mobile Testing: ${{ needs.mobile-testing.result }}" >> test-summary.md
+        echo "- Cross-Browser: ${{ needs.cross-browser.result }}" >> test-summary.md
+        echo "" >> test-summary.md
+        echo "## Artifacts Available" >> test-summary.md
+        echo "- Playwright Reports" >> test-summary.md
+        echo "- Test Results" >> test-summary.md
+        echo "- Visual Diff Reports (if any failures)" >> test-summary.md
+        echo "- Performance Metrics" >> test-summary.md
+        echo "" >> test-summary.md
+        echo "Generated on: $(date)" >> test-summary.md
+    
+    - name: Upload Test Summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-summary
+        path: test-summary.md
+        retention-days: 30
